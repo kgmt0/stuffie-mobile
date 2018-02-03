@@ -19,9 +19,11 @@ function handle_game_area_button(e)
 function handle_dir_button(e)
 {
 	var game_area = document.getElementById("game-area");
-	var new_button = document.createElement("button");
+	var new_button = document.createElement("div");
 
 	new_button.innerText = e.currentTarget.innerText;
+	new_button.className = e.currentTarget.className;
+	new_button.dataset.command = e.currentTarget.dataset.command;
 	new_button.addEventListener("click", handle_game_area_button);
 	game_area.appendChild(new_button);
 }
@@ -30,7 +32,7 @@ function handle_start_button()
 {
 	var buttons = Array.from(document.getElementById("game-area").children);
 
-	rpc("load-commands", buttons.map(x => x.innerText.toLowerCase()));
+	rpc("load-commands", buttons.map(x => x.dataset.command.toLowerCase()));
 	rpc("start");
 }
 
