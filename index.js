@@ -6,9 +6,13 @@ function intercalate(delim, array)
 function rpc(func, args)
 {
 	var debug = document.getElementById("debug");
+	var xhr = new XMLHttpRequest();
 	var args_str = (args && args.length > 0)?intercalate("-", args):"";
+	var url = "/"+func+"/"+args_str+"\n";
 
-	debug.value +=	"/"+func+"/"+args_str+"\n";
+	debug.value += url;
+	xhr.open("GET", "http://localhost:5000"+url);
+	xhr.send();
 }
 
 function handle_game_area_button(e)
