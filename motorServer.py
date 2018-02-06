@@ -113,7 +113,7 @@ def stop():
     return "goodbye World!"
 
 #parses url parameters into commands ands stores in vector
-@app.route('/load-command/<commands>')
+@app.route('/load-commands/<commands>')
 def load(commands):
     commandsVec = commands.split('-')
     runMotors(commandsVec)
