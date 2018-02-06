@@ -5,12 +5,10 @@ function intercalate(delim, array)
 
 function rpc(func, args)
 {
-	var debug = document.getElementById("debug");
 	var xhr = new XMLHttpRequest();
 	var args_str = (args && args.length > 0)?intercalate("-", args):"";
 	var url = "/"+func+"/"+args_str+"\n";
 
-	debug.value += url;
 	xhr.open("GET", "http://"+window.location.hostname+":5000"+url);
 	xhr.send();
 }
@@ -75,6 +73,4 @@ function init()
 
 		elem.addEventListener("click", elem_handler_dict[i]);
 	}
-
-	document.getElementById("debug").value = "";
 }

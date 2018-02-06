@@ -12,11 +12,6 @@ body
 	flex-direction: column;
 }
 
-#debug
-{
-	width: 100%;
-}
-
 #game-area
 {
 	flex: 1;
