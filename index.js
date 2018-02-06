@@ -11,7 +11,7 @@ function rpc(func, args)
 	var url = "/"+func+"/"+args_str+"\n";
 
 	debug.value += url;
-	xhr.open("GET", "http://localhost:5000"+url);
+	xhr.open("GET", "http://"+window.location.hostname+":5000"+url);
 	xhr.send();
 }
 
