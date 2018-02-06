@@ -1,7 +1,13 @@
-from flask import Flask
-from flask import request
+# vim: set sw=4 ts=4 et:
+
 import RPi.GPIO as GPIO
 from time import sleep
+from threading import Thread
+from threading import Event
+from threading import Condition
+from queue import Queue
+import signal
+import http.server
 import atexit
 
 PAUSE = 2   #number of seconds the motors will turn in any call to power motors
@@ -24,7 +30,10 @@ GPIO.setup(Motor2A,GPIO.OUT)
 GPIO.setup(Motor2B,GPIO.OUT)
 GPIO.setup(Motor2E,GPIO.OUT)
 
-app = Flask(__name__)
+worker_cv = Condition()
+motor_commands = Queue()
+exit = False
+stop = Event()
 
 #move cart forward for PAUSE seconds
 def forward():
@@ -37,7 +46,7 @@ def forward():
         GPIO.output(Motor2B,GPIO.LOW)
         GPIO.output(Motor2E,GPIO.HIGH)
 
-        sleep(2)
+        stop.wait(2)
         print("Stopping motor")
         GPIO.output(Motor1E,GPIO.LOW)   #left motor
         GPIO.output(Motor2E,GPIO.LOW)   #right motor
@@ -53,7 +62,7 @@ def backwards():
         GPIO.output(Motor2B,GPIO.HIGH)
         GPIO.output(Motor2E,GPIO.HIGH)
 
-        sleep(PAUSE)
+        stop.wait(PAUSE)
         print("Stopping motor")
         GPIO.output(Motor1E,GPIO.LOW)   #left motor
         GPIO.output(Motor2E,GPIO.LOW)   #right motor
@@ -69,7 +78,7 @@ def left():
         GPIO.output(Motor2B,GPIO.HIGH)
         GPIO.output(Motor2E,GPIO.HIGH)
 
-        sleep(PAUSE)
+        stop.wait(PAUSE)
         print("Stopping motor")
         GPIO.output(Motor1E,GPIO.LOW)   #left motor
         GPIO.output(Motor2E,GPIO.LOW)   #right motor
@@ -85,45 +94,70 @@ def right():
         GPIO.output(Motor2B,GPIO.LOW)
         GPIO.output(Motor2E,GPIO.HIGH)
 
-        sleep(PAUSE)
+        stop.wait(PAUSE)
         print("Stopping motor")
         GPIO.output(Motor1E,GPIO.LOW)   #left motor
         GPIO.output(Motor2E,GPIO.LOW)   #right motor
 
-#reads commands from vect and sends to motor
-def runMotors(commandsVec):
-    for command in commandsVec:
-            if command == 'up':
-                    forward()
-            if command == 'down':
-                    backwards()
-            if command == 'left':
-                    left()
-            if command == 'right':
-                    right()
+def process_motor_commands():
+    commands_dict = {   "up":       forward,
+                        "down":     backwards,
+                        "left":     left,
+                        "right":    right }
+    with worker_cv:
+        while not exit:
+            if not motor_commands.empty():
+                stop.clear()
+                commands_dict[motor_commands.get()]()
+            if motor_commands.empty():
+                worker_cv.wait()
 
-@app.route('/start/')
-def start():
-    print('start')
-    return "Hello World!"
+class StuffieMobileServer(http.server.SimpleHTTPRequestHandler):
+    def load_commands(self, args):
+        print(args)
+        with worker_cv:
+            print(args.split('-'))
+            for i in args.split("-"):
+                motor_commands.put(i)
+            print(motor_commands.empty())
+            worker_cv.notify()
 
-@app.route('/stop/')
-def stop():
-    print('stop')
-    return "goodbye World!"
+    def stop(self):
+        while not motor_commands.empty():
+            motor_commands.get()
+        stop.set()
 
-#parses url parameters into commands ands stores in vector
-@app.route('/load-commands/<commands>')
-def load(commands):
-    commandsVec = commands.split('-')
-    runMotors(commandsVec)
-    return "hello"
+    def do_GET(self):
+        tokens = self.path.strip("/").split("/")
+        print(tokens)
 
-@app.route('/running/')
-def running():
-    print('running')
-    return "goodbye World!"
+        if len(tokens) == 2 and tokens[0] == "load-commands":
+            self.load_commands(tokens[1])
+            self.send_response(200)
+        elif len(tokens) == 1 and tokens[0] == "stop":
+            self.stop()
+            self.send_response(200)
+        else:
+            self.send_response(404)
 
-atexit.register(GPIO.cleanup)
+        self.end_headers()
 
-# app.run()
+def shutdown(srv, worker):
+    global exit
+    exit = True
+    with worker_cv:
+        worker_cv.notify()
+    worker.join()
+    GPIO.cleanup()
+
+def init():
+    worker = Thread(target = process_motor_commands)
+    worker.start()
+    srv = http.server.HTTPServer(("0.0.0.0", 5000), StuffieMobileServer)
+    cleanup = lambda *x: Thread(target = srv.shutdown).start()
+    signal.signal(signal.SIGINT, cleanup)
+    signal.signal(signal.SIGTERM, cleanup)
+    srv.serve_forever()
+    shutdown(srv, worker)
+
+init()
