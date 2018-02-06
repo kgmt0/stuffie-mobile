@@ -58,9 +58,9 @@ def backwards():
         GPIO.output(Motor1E,GPIO.LOW)   #left motor
         GPIO.output(Motor2E,GPIO.LOW)   #right motor
 
-#turns cart right by powering left motor forward and right back
-def right():
-        print("right")
+#turns cart left by powering left motor back and right forward
+def left():
+        print("left")
         GPIO.output(Motor1A,GPIO.HIGH)  #left motor forward
         GPIO.output(Motor1B,GPIO.LOW)
         GPIO.output(Motor1E,GPIO.HIGH)
@@ -74,9 +74,9 @@ def right():
         GPIO.output(Motor1E,GPIO.LOW)   #left motor
         GPIO.output(Motor2E,GPIO.LOW)   #right motor
 
-#turns cart left by powering left motor back and right forward
-def left():
-        print("left")
+#turns cart right by powering left motor forward and right back
+def right():
+        print("right")
         GPIO.output(Motor1A,GPIO.LOW)   #left motor back
         GPIO.output(Motor1B,GPIO.HIGH)
         GPIO.output(Motor1E,GPIO.HIGH)
