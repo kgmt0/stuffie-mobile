@@ -37,7 +37,6 @@ function handle_start_button()
 	var buttons = Array.from(document.getElementById("game-area").children);
 
 	rpc("load-commands", buttons.map(x => x.dataset.command.toLowerCase()));
-	rpc("start");
 }
 
 function handle_stop_button()
