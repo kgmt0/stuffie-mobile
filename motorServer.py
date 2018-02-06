@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # vim: set sw=4 ts=4 et:
 
 import RPi.GPIO as GPIO
