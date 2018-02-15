@@ -1,6 +1,6 @@
 function intercalate(delim, array)
 {
-	return array.reduce((p, x) => p+delim+x, array.shift());
+	return array.reduce(function(p, x){return p+delim+x}, array.shift());
 }
 
 function rpc(func, args)
@@ -33,8 +33,9 @@ function handle_dir_button(e)
 function handle_start_button()
 {
 	var buttons = Array.from(document.getElementById("game-area").children);
+	var func = function(x){return x.dataset.command.toLowerCase()};
 
-	rpc("load-commands", buttons.map(x => x.dataset.command.toLowerCase()));
+	rpc("load-commands", buttons.map(func));
 }
 
 function handle_stop_button()
